@@ -1,0 +1,26 @@
+{
+	"name"             : "nikosmour/greek_income",
+	"description"      : "Verify Income in TaxisReport by aade ",
+  "type": "library",
+	"minimum-stability": "stable",
+	"license"          : "proprietary",
+	"authors"          : [
+		{
+			"name" : "nikolaos Mouratidis",
+			"email": "email@example.com"
+		}
+	],
+	"autoload": {
+		"psr-4": {
+			"GreekIncome\\": "src/GreekIncome/"
+		}
+	},
+	"require"          : {
+    "php": "^8.0",
+		"laravel/laravel": "9.*|10.*|11.*",
+		"illuminate/http": "*"
+	},
+	"suggest": {
+		"laravel/framework": "For Laravel projects, use `laravel/framework` package which includes `illuminate/http` for Laravel 9.x+."
+	}
+}
