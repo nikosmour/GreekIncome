@@ -10,8 +10,25 @@ use Psr\Http\Message\StreamInterface;
 
 class VerifyIncomeService extends VerifyIncomeBaseService
 {
+    protected const TO_CACHE = true;
+    protected const CACHE_TIME = 60000;
+    private array $cookies;
+
+
+    /**
+     * @throws ConnectionException
+     */
+    public function __construct()
+    {
+        if (self::TO_CACHE)
+            $this->getCachedCookies();
+        else
+            $this->refreshCookies();
+    }
+
     /**
      * return the for every input if the verification was correct or not
+     * @throws ConnectionException
      */
     public function __invoke(array $data): IncomeData
     {
@@ -20,6 +37,7 @@ class VerifyIncomeService extends VerifyIncomeBaseService
 
     /**
      * get the body of the response from the gov
+     * @param array $postData
      * @param bool $firstTime
      * @return StreamInterface|string
      * @throws ConnectionException
@@ -27,8 +45,7 @@ class VerifyIncomeService extends VerifyIncomeBaseService
     private function getHtml(array $postData,bool $firstTime=true): StreamInterface|string
     {
         // Extract cookies from the first response
-        $cookies = Cache::remember('govSessionCookies', 6000, function (){
-            return $this->getCookies();});
+        $cookies = $this->cookies;
 
         // Simulate the button click with a POST request
         $response = $this->validateIncomeToGov($cookies,$postData);
@@ -37,7 +54,7 @@ class VerifyIncomeService extends VerifyIncomeBaseService
             return $response->body();
         }
         if ($status == 400 && $firstTime && $this->whyFail($response->getBody())==='session') {
-            Cache::forget('govSessionCookies');
+            $this->refreshCookies();
             return $this->getHtml($postData,false);
         }
         return 'failed';
@@ -85,28 +102,12 @@ class VerifyIncomeService extends VerifyIncomeBaseService
 
     /**
      * Receiving new session cookies for the gov request
-     * @param $response
-     * @return array
+     * @throws ConnectionException
      */
-    private function getCookies(): array
+    private function refreshCookies():void
     {
-        $url = "https://www1.aade.gr/webtax2/incomefp2/year2024/income/e1check/index.jsp";
-
-        // Make the initial GET request
-        $response = Http::withOptions(['verify' => true]) // Disable SSL verification if needed
-        ->withHeaders([
-            'User-Agent' => 'CustomUserAgent/1.0',
-        ])
-            ->get($url);
-        $cookies = $response->cookies()->toArray();
-//            dd( $cookies);
-        $cook = [];
-        foreach ($cookies as $cookie) {
-            $cook[$cookie['Name']] = $cookie['Value'];
-        }
-        $cookies = $cook;
-        $cookies['f5_cspm'] = '1234';
-        return $cookies;
+        $this->cookies = $this->getNewCookies();
+        if ($this::TO_CACHE) Cache::put('govSessionCookies', $this->cookies,$this::CACHE_TIME);
     }
     /**
      * @param array $cookies
@@ -127,5 +128,32 @@ class VerifyIncomeService extends VerifyIncomeBaseService
             ])
             ->asForm() // Specify form data format
             ->post($url, $postData);
+    }
+
+    private function getCachedCookies():void
+    {
+        $this->cookies = Cache::remember('govSessionCookies', $this::CACHE_TIME, function() {
+            return $this->getNewCookies();  // Refresh cookies if not available
+        });
+    }
+
+    /**
+     * @return array array of cookies
+     * @throws ConnectionException
+     */
+    private function getNewCookies(): array
+    {
+        $url = "https://www1.aade.gr/webtax2/incomefp2/year2024/income/e1check/index.jsp";
+
+        // Make the initial GET request
+        $response = Http::withOptions(['verify' => true])
+        ->withHeaders([
+            'User-Agent' => 'CustomUserAgent/1.0',
+        ])
+            ->get($url);
+        $cookies = $response->cookies()->toArray();
+        $cookies = array_column($cookies, 'Value', 'Name');
+        $cookies['f5_cspm'] = '1234';
+        return $cookies;
     }
 }
