@@ -13,7 +13,7 @@ class VerifyIncomeService extends VerifyIncomeBaseService
     /**
      * return the for every input if the verification was correct or not
      */
-    public function verify(array $data): IncomeData
+    public function __invoke(array $data): IncomeData
     {
         return new IncomeData($this->findAnswers($data),$data);
     }
