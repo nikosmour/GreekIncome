@@ -11,14 +11,17 @@ class IncomeData
     ];
     public $success;
 
-    // Add additional properties here if needed, depending on the incoming data.
+    /**
+     * @var int
+     */
+    public int $successCount;
 
     public function __construct(array $data ,array $input)
     {
         $this->input = $input;
-        // Assign the success value
-        $allTrue=true;
-        $oneTrue=false;
+
+        /**calculate the success validations*/
+        $successCount=0;
 
 
         // Loop through the incoming data and populate object properties dynamically
@@ -42,12 +45,12 @@ class IncomeData
 
             // Assign the value to the appropriate property
             $this->output[$person][$newKey] = $value;
-            $allTrue=$allTrue && $value;
-            $oneTrue=$oneTrue || $value;
+            if($value) $successCount++;
         }
         $success=false;
-        if ($allTrue && $oneTrue) $success= true;
-        elseif ($oneTrue){ $success = null ; }
+        if ($successCount === count($data)) $success= true;
+        elseif ($successCount){ $success = null ; }
+        $this->successCount = $successCount;
         $this->success = $success;
     }
 
@@ -56,6 +59,7 @@ class IncomeData
     {
         return [
             'success' => $this->success,
+            'successCount' => $this->successCount,
             'input'=> $this->input,
             'output'=>$this->output,
         ];
