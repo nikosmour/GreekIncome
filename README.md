@@ -76,11 +76,11 @@ $data = [
     'EISODHMA_A' => 1800,
     //...
 ];
-// equals to
+// has the same effect as
 $data = [
     //...
     'ypoxreos' => [ // μόνο υπόχρεος
-        'EISODHMA_A' => 1800, // υπερισχύει η τιμή του αυτόνομου
+        'EISODHMA_A' => 1800, // γιατί υπερισχύει η τιμή του αυτόνομου
     ],
     'EISODHMA_C' => 2000, // ή [2000] ή [0=>2000] μόνο υπόχρεος
     'EISODHMA_E' => [3000,1500], // και τον δύο
@@ -91,6 +91,17 @@ $data = [
 ?>
 
 ```
+### [IncomeData](src/GreekIncome/Classes/IncomeData.php)
+**\GreekIncome\Classes\IncomeData**
+
+| property / function             | περιγραφή                                      | type           |
+|---------------------------------|------------------------------------------------|----------------|
+| **input**                       | Τα αρχικά δεδομένα που δόθηκαν από τον χρήστη  | array          | 
+| **output**                      | Τα δεδομένα που παράγονται από την επεξεργασία | array\<array\> |
+| **success**                     | Δείχνει αν η επεξεργασία ήταν επιτυχής         | bool \| null   |
+| **successCount**                | Το πλήθος επιτυχών ελέγχων                     | int            |
+| **toArray()**                   | Μετατροπή σε πίνακα                            | array          |
+| **__toString()** , **toJson()** | Μετατροπή σε Json                              | json           |
 
 ### Παράδειγμα Κώδικα
 
@@ -114,7 +125,7 @@ $data = [
 ];
 
 // Εκτέλεση της υπηρεσίας ελέγχου
-$result = (new VerifyIncomeService())->verify($data);
+$result = (new VerifyIncomeService())->verify($data); //type IncomeData
 dd($result);
 ?>
 
@@ -122,19 +133,13 @@ dd($result);
 
 ### Αναμενόμενα Αποτελέσματα
 
-Το αποτέλεσμα της επεξεργασίας verify είναι ένα object IncomeData που περιέχει τα εξής πεδία:
-- **input**: Τα αρχικά δεδομένα που δόθηκαν από τον χρήστη (Array).
-- **output**: Τα δεδομένα που παράγονται από την επεξεργασία (Array).
-- **success**: Δείχνει αν η επεξεργασία ήταν επιτυχής (`true`, `false`, ή `null`).
-- **successCount**: Το πλήθος επιτυχών ελέγχων.
-- Συναρτήσεις **toArray**, **toJson** : Μετατροπή σε πίνακα ή Json αντίστοιχα 
-- Συνάρτηση **__toString** : Αυτόματη μετατροπή σε Json
-
-Παρακάτω παρουσιάζονται διαφορετικά παραδείγματα ανάλογα με την τιμή του `success`.
+Το αποτέλεσμα της επεξεργασίας verify είναι ένα object IncomeData.
+Παρακάτω παρουσιάζονται διαφορετικά παραδείγματα ανάλογα με την τιμή του πεδίου`success`.
 
 #### Παράδειγμα Επιτυχίας (success: true)
 ```json
 {
+    "successCount":2,
     "success": true,
     "input": {
         "AFM": "123456789",
@@ -156,6 +161,7 @@ dd($result);
 #### Παράδειγμα Αποτυχίας (success: false)
 ```json
 {
+    "successCount":0,
     "success": false,
     "input": {
         "AFM": "123456789",
@@ -179,6 +185,7 @@ dd($result);
 #### Παράδειγμα Μερικής Επιτυχίας (success: null)
 ```json
 {
+    "successCount":1,
     "success": null,
     "input": {
         "AFM": "123456789",
@@ -206,4 +213,4 @@ dd($result);
 | UnexpectedValueException | Invalid value                              |
 | InvalidArgumentException | Invalid key                                |
 | ErrorException           | Δεν έχουν οριστεί όλα τα υποχρεωτικά πεδία |
-| LengthException          | Λάθος πλήθος χαρακτήρων μόνο για το ΑΦΜ    |
+| LengthException          | Λάθος πλήθος χαρακτήρων (μόνο για το ΑΦΜ)  |
