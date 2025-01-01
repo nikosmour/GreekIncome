@@ -2,7 +2,6 @@
 
 namespace GreekIncome\Services;
 
-use GreekIncome\Classes\IncomeData;
 use InvalidArgumentException;
 use LengthException;
 use UnexpectedValueException;
@@ -15,7 +14,7 @@ class VerifyIncomeBaseService
      *
      * @var array
      */
-    protected array $initRequestData = [
+    protected const  initRequestData = [
         'PBCheck' => 'ΕΛΕΓΧΟΣ',
         'AFM_F' => '',
         'AR_KATAXWRHSHS' => '',
@@ -49,26 +48,6 @@ class VerifyIncomeBaseService
     ];
 
     /**
-     * Data to be sent to the government.
-     *
-     * @var array
-     */
-    protected array $postData = [];
-
-    /**
-     * Input data to validate.
-     *
-     * @var array
-     */
-    protected array $inputData;
-
-    public function __construct(array $values)
-    {
-        $this->inputData = $values;
-        $this->postData = $this->transformInputData();
-    }
-
-    /**
      * Validates a key.
      *
      * @param string $key
@@ -100,13 +79,12 @@ class VerifyIncomeBaseService
 
     /**
      * Validates and transforms the input data to match the government format.
-     *
+     * @property $data  the inputData
      * @return array
      * @throws InvalidArgumentException|LengthException|UnexpectedValueException
      */
-    private function transformInputData(): array
+    private function transformInputData(array $data): array
     {
-        $data = $this->inputData;
         $newValues = [];
 
         // Validate and transform main fields
@@ -131,7 +109,7 @@ class VerifyIncomeBaseService
         }
 
         if (count($newValues) > 3) {
-            return array_merge($this->initRequestData, $newValues);
+            return $newValues;
         }
 
         throw new InvalidArgumentException("Invalid input data: insufficient values for validation.");
@@ -173,14 +151,11 @@ class VerifyIncomeBaseService
     }
 
     /**
-     * Transforms the government output data to match input keys.
-     *
-     * @param array $data
+     * @param array $values
      * @return array
      */
-    protected function transformOutputData(array $data): array
+    public function getPostData(array $values): array
     {
-        $incomeData = new IncomeData($data, $this->inputData);
-        return $incomeData->toArray();
+        return array_merge($this::initRequestData, $this->transformInputData($values));
     }
 }

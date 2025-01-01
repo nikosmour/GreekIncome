@@ -2,6 +2,7 @@
 
 namespace GreekIncome\Services;
 
+use GreekIncome\Classes\IncomeData;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
@@ -11,12 +12,10 @@ class VerifyIncomeService extends VerifyIncomeBaseService
 {
     /**
      * return the for every input if the verification was correct or not
-     * @return array<string,bool>
      */
-    public function verify(): array
+    public function verify(array $data): IncomeData
     {
-
-        return $this->transformOutputData($this->findAnswers());
+        return new IncomeData($this->findAnswers($data),$data);
     }
 
     /**
@@ -25,21 +24,21 @@ class VerifyIncomeService extends VerifyIncomeBaseService
      * @return StreamInterface|string
      * @throws ConnectionException
      */
-    private function getHtml(bool $firstTime=true): StreamInterface|string
+    private function getHtml(array $postData,bool $firstTime=true): StreamInterface|string
     {
         // Extract cookies from the first response
         $cookies = Cache::remember('govSessionCookies', 6000, function (){
             return $this->getCookies();});
 
         // Simulate the button click with a POST request
-        $response = $this->validateIncomeToGov($cookies);
+        $response = $this->validateIncomeToGov($cookies,$postData);
         $status = $response->getStatusCode();
         if ($status == 200) {
             return $response->body();
         }
         if ($status == 400 && $firstTime && $this->whyFail($response->getBody())==='session') {
             Cache::forget('govSessionCookies');
-            return $this->getHtml(false);
+            return $this->getHtml($postData,false);
         }
         return 'failed';
 
@@ -50,9 +49,10 @@ class VerifyIncomeService extends VerifyIncomeBaseService
      * Return all the result of the validations that happened on the aade
      * @return array<bool>
      */
-    private function findAnswers():array
+    private function findAnswers(array $inputData):array
     {
         $html = $this->getHtml();
+        $postData=$this->getPostData($inputData);
         if ($html=== 'failed')
             return [];
         preg_match_all("/document\.images\['(.*?)']\.src\s*=\s*(.*?)_flat.src;/", $html, $matches, PREG_SET_ORDER);
@@ -112,10 +112,9 @@ class VerifyIncomeService extends VerifyIncomeBaseService
      * @return \GuzzleHttp\Promise\PromiseInterface|\Illuminate\Http\Client\Response
      * @throws ConnectionException
      */
-    private function validateIncomeToGov(array $cookies): \GuzzleHttp\Promise\PromiseInterface|\Illuminate\Http\Client\Response
+    private function validateIncomeToGov(array $cookies,array $postData): \GuzzleHttp\Promise\PromiseInterface|\Illuminate\Http\Client\Response
     {
 //        $year=now()->subMonths(5)->format('Y');
-        $postData = $this->postData;
         $year=$postData['FISCAL_YEAR'];
         $url= "https://www1.aade.gr/webtax2/incomefp2/year$year-income-e1-check.do";
 

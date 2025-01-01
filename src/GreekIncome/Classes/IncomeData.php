@@ -5,8 +5,10 @@ namespace GreekIncome\Classes;
 class IncomeData
 {
     public $input=[];
-    public $ypoxreos = [];
-    public $sizigos = [];
+    public $output=[
+        'ypoxreos'=>[],
+        'sizigos'=>[],
+    ];
     public $success;
 
     // Add additional properties here if needed, depending on the incoming data.
@@ -17,6 +19,7 @@ class IncomeData
         // Assign the success value
         $allTrue=true;
         $oneTrue=false;
+
 
         // Loop through the incoming data and populate object properties dynamically
         foreach ($data as $key => $value) {
@@ -38,7 +41,7 @@ class IncomeData
             }
 
             // Assign the value to the appropriate property
-            $this->{$person}[$newKey] = $value;
+            $this->output[$person][$newKey] = $value;
             $allTrue=$allTrue && $value;
             $oneTrue=$oneTrue || $value;
         }
@@ -54,11 +57,7 @@ class IncomeData
         return [
             'success' => $this->success,
             'input'=> $this->input,
-            'output'=>[
-                'ypoxreos' => $this->ypoxreos,
-                'sizigos' => $this->sizigos,
-            ],
-            'cache' => $this->cache,
+            'output'=>$this->output,
         ];
     }
 
@@ -66,6 +65,10 @@ class IncomeData
     public function toJson(): string
     {
         return json_encode($this->toArray());
+    }
+    public function __toString(): string
+    {
+        return $this->toJson();
     }
 }
 
