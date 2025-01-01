@@ -125,7 +125,7 @@ $data = [
 ];
 
 // Εκτέλεση της υπηρεσίας ελέγχου
-$result = (new VerifyIncomeService())->verify($data); //type IncomeData
+$result = (new VerifyIncomeService())($data); //type IncomeData
 dd($result);
 ?>
 
@@ -133,7 +133,7 @@ dd($result);
 
 ### Αναμενόμενα Αποτελέσματα
 
-Το αποτέλεσμα της επεξεργασίας verify είναι ένα object IncomeData.
+Το αποτέλεσμα της επεξεργασίας (κλήση __invoke()) είναι ένα object IncomeData.
 Παρακάτω παρουσιάζονται διαφορετικά παραδείγματα ανάλογα με την τιμή του πεδίου`success`.
 
 #### Παράδειγμα Επιτυχίας (success: true)
