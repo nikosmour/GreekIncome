@@ -7,7 +7,7 @@
 	"authors"          : [
 		{
 			"name" : "nikolaos Mouratidis",
-			"email": "email@example.com"
+			"email": "nikos.moura@gmail.com"
 		}
 	],
 	"autoload": {
@@ -17,8 +17,7 @@
 	},
 	"require"          : {
     "php": "^8.0",
-		"laravel/laravel": "9.*|10.*|11.*",
-		"illuminate/http": "*"
+		"laravel/framework": "9.*|10.*|11.*"
 	},
 	"suggest": {
 		"laravel/framework": "For Laravel projects, use `laravel/framework` package which includes `illuminate/http` for Laravel 9.x+."
