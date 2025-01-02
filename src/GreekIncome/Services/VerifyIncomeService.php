@@ -8,11 +8,12 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Psr\Http\Message\StreamInterface;
 
-class VerifyIncomeService extends VerifyIncomeBaseService
+class VerifyIncomeService
 {
     protected const TO_CACHE = true;
     protected const CACHE_TIME = 60000;
     private array $cookies;
+    protected VerifyIncomeDataService $dataService ;
 
 
     /**
@@ -20,6 +21,7 @@ class VerifyIncomeService extends VerifyIncomeBaseService
      */
     public function __construct()
     {
+        $this->dataService = new VerifyIncomeDataService();
         if (self::TO_CACHE)
             $this->getCachedCookies();
         else
@@ -69,18 +71,15 @@ class VerifyIncomeService extends VerifyIncomeBaseService
      */
     private function findAnswers(array $inputData):array
     {
-        $postData=$this->getPostData($inputData);
+        $postData=$this->dataService->getPostData($inputData);
         $html = $this->getHtml($postData);
         if ($html=== 'failed')
             return [];
         preg_match_all("/document\.images\['(.*?)']\.src\s*=\s*(.*?)_flat.src;/", $html, $matches, PREG_SET_ORDER);
-        $checking=[];
-        foreach ($matches as $match) {
-            $checking[$match[1]]=$match[2]==='ok';//$checking[$imageName]=$srcValue === 'ok';
-            // The image name, e.g., 'aytforf'
-            // The src value, e.g., ok / notok
-        }
-        return $checking;
+        return array_reduce($matches, function($carry, $match) {
+            $carry[$match[1]] = $match[2] === 'ok';
+            return $carry;
+        }, []);
     }
 
     /**
@@ -116,9 +115,7 @@ class VerifyIncomeService extends VerifyIncomeBaseService
      */
     private function validateIncomeToGov(array $cookies,array $postData): \GuzzleHttp\Promise\PromiseInterface|\Illuminate\Http\Client\Response
     {
-//        $year=now()->subMonths(5)->format('Y');
-        $year=$postData['FISCAL_YEAR'];
-        $url= "https://www1.aade.gr/webtax2/incomefp2/year$year-income-e1-check.do";
+        $url= $this->dataService::getVerifyUrl($postData['FISCAL_YEAR']);
 
         return Http::withOptions(['verify' => true])
             ->withCookies($cookies, 'www1.aade.gr') // Include cookies
@@ -143,7 +140,7 @@ class VerifyIncomeService extends VerifyIncomeBaseService
      */
     private function getNewCookies(): array
     {
-        $url = "https://www1.aade.gr/webtax2/incomefp2/year2024/income/e1check/index.jsp";
+        $url = $this->dataService::COOKIE_URL;
 
         // Make the initial GET request
         $response = Http::withOptions(['verify' => true])

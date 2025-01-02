@@ -6,15 +6,17 @@ use InvalidArgumentException;
 use LengthException;
 use UnexpectedValueException;
 
-class VerifyIncomeBaseService
+class VerifyIncomeDataService
 {
+    /** @var string  url to receive  session cookies */
+    public const COOKIE_URL="https://www1.aade.gr/webtax2/incomefp2/year2024/income/e1check/index.jsp";
     /**
      * Default request data expected by the government.
      * Keys ending with `_F` refer to "ypoxreos", `_S` to "sizigos".
      *
      * @var array
      */
-    protected const  initRequestData = [
+    private const  INIT_REQUEST_DATA = [
         'PBCheck' => 'ΕΛΕΓΧΟΣ',
         'AFM_F' => '',
         'AR_KATAXWRHSHS' => '',
@@ -151,11 +153,23 @@ class VerifyIncomeBaseService
     }
 
     /**
+     * get the data to send as a post on the incomeBaseService
      * @param array $values
      * @return array
      */
     public function getPostData(array $values): array
     {
-        return array_merge($this::initRequestData, $this->transformInputData($values));
+        return array_merge($this::INIT_REQUEST_DATA, $this->transformInputData($values));
+    }
+
+    /**
+     * receive the url to verify the data
+     * @param int|null $year
+     * @return string
+     */
+    public static function getVerifyUrl(?int $year): string
+    {
+        $year??=now()->subMonths(5)->format('Y');
+        return "https://www1.aade.gr/webtax2/incomefp2/year$year-income-e1-check.do";
     }
 }
